@@ -92,8 +92,8 @@ class BrowserBridge:
             self._handle_client,
             self.host,
             self.port,
-            ping_interval=20,
-            ping_timeout=10
+            # Disable ping/pong for stability during debugging
+            ping_interval=None
         )
         logger.info(f"BrowserBridge WebSocket server listening on ws://{self.host}:{self.port}")
     

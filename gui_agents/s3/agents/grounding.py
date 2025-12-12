@@ -412,15 +412,15 @@ class OSWorldACI(ACI):
     @agent_action
     def type(
         self,
-        element_description: Optional[str] = None,
         text: str = "",
+        element_description: Optional[str] = None,
         overwrite: bool = False,
         enter: bool = False,
     ):
         """Type text/unicode into a specific element
         Args:
-            element_description:str, a detailed description of which element to enter text in. This description should be at least a full sentence.
             text:str, the text to type
+            element_description:str, a detailed description of which element to enter text in. This description should be at least a full sentence.
             overwrite:bool, Assign it to True if the text should overwrite the existing text, otherwise assign it to False. Using this argument clears all text in an element.
             enter:bool, Assign it to True if the enter key should be pressed after typing the text, otherwise assign it to False.
         """
