@@ -15,6 +15,13 @@ from gui_agents.s3.agents.grounding import OSWorldACI
 from gui_agents.s3.agents.agent_s import AgentS3
 from gui_agents.s3.utils.local_env import LocalEnv
 
+# Import HybridACI for browser extension support
+try:
+    from gui_agents.s3.agents.hybrid_aci import HybridACI
+    HYBRID_AVAILABLE = True
+except ImportError:
+    HYBRID_AVAILABLE = False
+
 current_platform = platform.system().lower()
 
 # Global flag to track pause state for debugging
@@ -315,6 +322,12 @@ def main():
         default=False,
         help="Enable local coding environment for code execution (WARNING: Executes arbitrary code locally)",
     )
+    parser.add_argument(
+        "--enable_hybrid_browser",
+        action="store_true",
+        default=False,
+        help="Enable hybrid browser control (DOM + visual fallback) via Chrome extension",
+    )
 
     args = parser.parse_args()
 
@@ -351,14 +364,41 @@ def main():
         )
         local_env = LocalEnv()
 
-    grounding_agent = OSWorldACI(
-        env=local_env,
-        platform=current_platform,
-        engine_params_for_generation=engine_params,
-        engine_params_for_grounding=engine_params_for_grounding,
-        width=screen_width,
-        height=screen_height,
-    )
+    # Choose grounding agent based on hybrid mode
+    if args.enable_hybrid_browser:
+        if HYBRID_AVAILABLE:
+            print("🌐 Hybrid browser mode enabled. Install extension from:")
+            print("   chrome://extensions → Load unpacked → gui_agents/s3/browser/extension")
+            print("   Extension will connect on ws://localhost:9333")
+            grounding_agent = HybridACI(
+                env=local_env,
+                platform=current_platform,
+                engine_params_for_generation=engine_params,
+                engine_params_for_grounding=engine_params_for_grounding,
+                width=screen_width,
+                height=screen_height,
+                enable_browser=True,
+            )
+        else:
+            print("⚠️  HybridACI not available. Install websockets: pip install websockets")
+            print("   Falling back to standard visual grounding.")
+            grounding_agent = OSWorldACI(
+                env=local_env,
+                platform=current_platform,
+                engine_params_for_generation=engine_params,
+                engine_params_for_grounding=engine_params_for_grounding,
+                width=screen_width,
+                height=screen_height,
+            )
+    else:
+        grounding_agent = OSWorldACI(
+            env=local_env,
+            platform=current_platform,
+            engine_params_for_generation=engine_params,
+            engine_params_for_grounding=engine_params_for_grounding,
+            width=screen_width,
+            height=screen_height,
+        )
 
     agent = AgentS3(
         engine_params,
