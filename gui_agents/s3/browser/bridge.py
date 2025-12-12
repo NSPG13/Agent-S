@@ -25,7 +25,7 @@ class BrowserBridge:
     WebSocket server that communicates with the Agent-S3 browser extension.
     """
     
-    def __init__(self, host: str = "localhost", port: int = 9333):
+    def __init__(self, host: str = "127.0.0.1", port: int = 9333):
         if websockets is None:
             raise ImportError(
                 "websockets package required. Install with: pip install websockets"
@@ -94,6 +94,7 @@ class BrowserBridge:
     
     async def _handle_client(self, websocket: WebSocketServerProtocol, path: str):
         """Handle incoming WebSocket connections."""
+        print(f"DEBUG: Browser extension connecting from {websocket.remote_address}")
         logger.info(f"Browser extension connected from {websocket.remote_address}")
         
         self.client = websocket
@@ -102,8 +103,10 @@ class BrowserBridge:
         try:
             async for message in websocket:
                 await self._handle_message(message)
-        except websockets.exceptions.ConnectionClosed:
-            logger.info("Browser extension disconnected")
+        except websockets.exceptions.ConnectionClosed as e:
+            logger.warning(f"Browser extension disconnected. Code: {e.code}, Reason: {e.reason}")
+        except Exception as e:
+            logger.exception(f"Unexpected error in WebSocket handler: {e}")
         finally:
             self.client = None
             self.connected = False

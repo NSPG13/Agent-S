@@ -8,7 +8,7 @@
 // WebSocket connection to Agent-S3
 let ws = null;
 let wsConnected = false;
-const WS_URL = 'ws://localhost:9333';
+const WS_URL = 'ws://127.0.0.1:9333';
 const RECONNECT_INTERVAL = 3000;
 
 // Connection state
@@ -24,18 +24,18 @@ function connectWebSocket() {
     }
 
     console.log('[Agent-S3] Connecting to WebSocket:', WS_URL);
-    
+
     try {
         ws = new WebSocket(WS_URL);
-        
+
         ws.onopen = () => {
             console.log('[Agent-S3] WebSocket connected');
             wsConnected = true;
             connectionAttempts = 0;
-            
+
             // Notify popup of connection status
-            chrome.runtime.sendMessage({ type: 'connection_status', connected: true });
-            
+            chrome.runtime.sendMessage({ type: 'connection_status', connected: true }).catch(() => { });
+
             // Send handshake
             ws.send(JSON.stringify({
                 type: 'handshake',
@@ -43,12 +43,12 @@ function connectWebSocket() {
                 version: '1.0.0'
             }));
         };
-        
+
         ws.onmessage = async (event) => {
             try {
                 const message = JSON.parse(event.data);
                 console.log('[Agent-S3] Received command:', message);
-                
+
                 const response = await handleCommand(message);
                 ws.send(JSON.stringify(response));
             } catch (error) {
@@ -60,26 +60,26 @@ function connectWebSocket() {
                 }));
             }
         };
-        
+
         ws.onclose = () => {
             console.log('[Agent-S3] WebSocket disconnected');
             wsConnected = false;
             ws = null;
-            
+
             // Notify popup of connection status
-            chrome.runtime.sendMessage({ type: 'connection_status', connected: false }).catch(() => {});
-            
+            chrome.runtime.sendMessage({ type: 'connection_status', connected: false }).catch(() => { });
+
             // Attempt reconnection
             if (connectionAttempts < MAX_RECONNECT_ATTEMPTS) {
                 connectionAttempts++;
                 setTimeout(connectWebSocket, RECONNECT_INTERVAL);
             }
         };
-        
+
         ws.onerror = (error) => {
             console.error('[Agent-S3] WebSocket error:', error);
         };
-        
+
     } catch (error) {
         console.error('[Agent-S3] Failed to create WebSocket:', error);
         setTimeout(connectWebSocket, RECONNECT_INTERVAL);
@@ -91,10 +91,10 @@ function connectWebSocket() {
  */
 async function handleCommand(message) {
     const { id, action, params } = message;
-    
+
     try {
         let result;
-        
+
         switch (action) {
             case 'navigate':
                 result = await handleNavigate(params);
@@ -126,9 +126,9 @@ async function handleCommand(message) {
             default:
                 throw new Error(`Unknown action: ${action}`);
         }
-        
+
         return { id, success: true, result };
-        
+
     } catch (error) {
         console.error('[Agent-S3] Command error:', error);
         return { id, success: false, error: error.message };
@@ -171,7 +171,7 @@ async function handleNavigate(params) {
     const { url } = params;
     const tab = await getActiveTab();
     await chrome.tabs.update(tab.id, { url });
-    
+
     // Wait for navigation to complete
     return new Promise((resolve) => {
         const listener = (tabId, changeInfo) => {
@@ -181,7 +181,7 @@ async function handleNavigate(params) {
             }
         };
         chrome.tabs.onUpdated.addListener(listener);
-        
+
         // Timeout after 30 seconds
         setTimeout(() => {
             chrome.tabs.onUpdated.removeListener(listener);
