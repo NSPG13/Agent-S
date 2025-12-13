@@ -64,11 +64,10 @@ class HybridACI(OSWorldACI):
     
     def _should_use_browser(self) -> bool:
         """Determine if we should use browser DOM control."""
-        if not self.browser_available:
-            return False
-        
-        # Check if a browser is the active window
-        return is_browser_active()
+        # If the bridge is connected, we prefer DOM control.
+        # We assume that if the bridge is up, the user wants us to use it,
+        # even if the browser isn't strictly the 'Foreground Window' (e.g. during debugging).
+        return self.browser_available
     
     def _try_browser_click(self, element_description: str) -> Optional[str]:
         """
