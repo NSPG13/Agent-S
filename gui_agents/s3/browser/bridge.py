@@ -97,7 +97,7 @@ class BrowserBridge:
         )
         logger.info(f"BrowserBridge WebSocket server listening on ws://{self.host}:{self.port}")
     
-    async def _handle_client(self, websocket: WebSocketServerProtocol, path: str):
+    async def _handle_client(self, websocket: WebSocketServerProtocol):
         """Handle incoming WebSocket connections."""
         print(f"DEBUG: Browser extension connecting from {websocket.remote_address}")
         logger.info(f"Browser extension connected from {websocket.remote_address}")
