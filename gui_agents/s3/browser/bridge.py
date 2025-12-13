@@ -218,12 +218,15 @@ class BrowserBridge:
         self,
         text: str,
         selector: str = None,
+        text_match: str = None,
         clear: bool = False
     ) -> Dict:
         """Type text into an element."""
         params = {"text": text, "clear": clear}
         if selector:
             params["selector"] = selector
+        if text_match:
+            params["text_match"] = text_match  # Pass as 'text' for findElement
         return self.send_command("type", params)
     
     def scroll(

@@ -73,19 +73,18 @@ class HybridACI(OSWorldACI):
     def _try_browser_click(self, element_description: str) -> Optional[str]:
         """
         Try to click using browser extension.
-        
-        Returns:
-            Code string if successful, None if should fall back to visual.
         """
         if not self.browser_available:
             return None
         
-        # Try to find and click the element
-        result = self.bridge.click(text=element_description)
+        # Heuristic: If it starts with # or ., treat as selector
+        if element_description.startswith("#") or element_description.startswith("."):
+            result = self.bridge.click(selector=element_description)
+        else:
+            result = self.bridge.click(text=element_description)
         
         if result.get("success") and result.get("result", {}).get("clicked"):
             logger.info(f"HybridACI: DOM click successful: {result.get('result')}")
-            # Return a no-op since the action already happened
             return "import time; time.sleep(0.3)  # DOM click completed"
         
         logger.info(f"HybridACI: DOM click failed, falling back to visual: {result}")
@@ -99,22 +98,31 @@ class HybridACI(OSWorldACI):
     ) -> Optional[str]:
         """
         Try to type using browser extension.
-        
-        Returns:
-            Code string if successful, None if should fall back to visual.
         """
         if not self.browser_available:
             return None
         
         # Build params
         selector = None
+        target_text = None
+        
         if element_description:
-            # Try to find element first
-            find_result = self.bridge.find_element(text=element_description)
+            if element_description.startswith("#") or element_description.startswith("."):
+                selector = element_description
+            else:
+                target_text = element_description
+                
+            # Verification: Try to find element first to ensure it exists before typing
+            if selector:
+                find_result = self.bridge.find_element(selector=selector)
+            else:
+                find_result = self.bridge.find_element(text=target_text)
+                
             if not find_result.get("success") or not find_result.get("result", {}).get("found"):
                 return None
         
-        result = self.bridge.type_text(text=text, clear=clear)
+        # Execute type with identified target
+        result = self.bridge.type_text(text=text, clear=clear, selector=selector, text_match=target_text)
         
         if result.get("success") and result.get("result", {}).get("typed"):
             logger.info(f"HybridACI: DOM type successful")

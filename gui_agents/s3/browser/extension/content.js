@@ -186,14 +186,28 @@
      * Type text into an element
      */
     function typeText(params) {
-        const { text, clear } = params;
-        let element = findElement(params);
+        const { text, clear, text_match, selector } = params;
+
+        // Construct dedicated finder params
+        // For finding, we strictly want selector OR text_match. 
+        // We do NOT want 'text' (which is the keystrokes) to be used for finding.
+        const findParams = {
+            selector: selector,
+            text: text_match, // Map bridge's text_match to findElement's text criterion
+            role: params.role,
+            index: params.index
+        };
+
+        let element = findElement(findParams);
 
         // If no specific element, try to find focused element or first input
         if (!element) {
-            element = document.activeElement;
-            if (!element || element === document.body) {
-                element = document.querySelector('input:not([type="hidden"]), textarea');
+            // Only fallback if NO specific target was requested
+            if (!selector && !text_match) {
+                element = document.activeElement;
+                if (!element || element === document.body) {
+                    element = document.querySelector('input:not([type="hidden"]), textarea');
+                }
             }
         }
 
