@@ -226,11 +226,11 @@ class HybridACI(OSWorldACI):
     def get_page_content(self) -> Optional[Dict]:
         """
         Get current page content via DOM (browser only).
-        
-        Returns:
-            Dict with url, title, and elements if successful, None otherwise.
+        Returns None if browser is not active or extension is disconnected.
         """
-        if not self.browser_available:
+        # Strict check: acts as a gatekeeper.
+        # If the user is in VS Code, we do NOT want to return YouTube DOM.
+        if not self._should_use_browser():
             return None
         
         result = self.bridge.get_dom(simplified=True)

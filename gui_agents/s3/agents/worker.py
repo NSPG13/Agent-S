@@ -197,10 +197,44 @@ class Worker(BaseModule):
             )
             self.generator_agent.add_system_prompt(prompt_with_instructions)
 
-        # Get the per-step reflection
-        reflection, reflection_thoughts = self._generate_reflection(instruction, obs)
-        if reflection:
-            generator_message += f"REFLECTION: You may use this reflection on the previous action and overall trajectory:\n{reflection}\n"
+        # ------------------------------------------------------------------
+        # DOM-BASED PERCEPTION (Hybrid Browser Logic)
+        # ------------------------------------------------------------------
+        # If we can read the DOM, we use it as the PRIMARY perception source.
+        # We SKIP visual reflection (UI-TARS) to save time/cost and avoid 503 errors.
+        dom_content = None
+        if hasattr(self.grounding_agent, "get_page_content"):
+            dom_content = self.grounding_agent.get_page_content()
+
+        reflection = None
+        reflection_thoughts = None
+
+        if dom_content:
+            # === BROWSER MODE ===
+            # Inject DOM Text representation
+            generator_message += "\n[BROWSER ACTIVE - DOM DETECTED]\n"
+            generator_message += f"Page Title: {dom_content.get('title', 'Unknown')}\n"
+            generator_message += f"URL: {dom_content.get('url', 'Unknown')}\n"
+            generator_message += "Interactive Elements (Use `agent.type` or `agent.click` with the exact text or id):\n"
+            
+            elements = dom_content.get('elements', [])
+            # Limit to reasonable size to fit context
+            for el in elements[:100]:
+                tag = el.get('tag', 'element')
+                text = el.get('text', '')
+                eid = el.get('id', '')
+                if text or eid:
+                   generator_message += f"- [{tag.upper()}] text='{text}' id='{eid}'\n"
+            
+            generator_message += "\n(Visual Reflection SKIPPED - Using DOM)\n"
+            logger.info("Hybrid Worker: Using DOM perception, skipping UI-TARS.")
+
+        else:
+            # === DESKTOP MODE (Original) ===
+            # Fallback to Visual Perception (UI-TARS)
+            reflection, reflection_thoughts = self._generate_reflection(instruction, obs)
+            if reflection:
+                generator_message += f"REFLECTION: You may use this reflection on the previous action and overall trajectory:\n{reflection}\n"
 
         # Get the grounding agent's knowledge base buffer
         generator_message += (
