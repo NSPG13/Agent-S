@@ -30,7 +30,7 @@ class BrowserBridge:
     WebSocket server that communicates with the Agent-S3 browser extension.
     """
     
-    def __init__(self, host: str = "127.0.0.1", port: int = 9333):
+    def __init__(self, host: str = "0.0.0.0", port: int = 9333):
         if websockets is None:
             raise ImportError(
                 "websockets package required. Install with: pip install websockets"
