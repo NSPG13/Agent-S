@@ -212,9 +212,22 @@
 
         // Type the text
         if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            element.value += text;
+            // Robust value setting for React/Angular/Vue
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+            const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+
+            const setter = element.tagName === 'INPUT' ? nativeInputValueSetter : nativeTextAreaValueSetter;
+
+            if (setter && setter !== element.value) {
+                setter.call(element, element.value + text);
+            } else {
+                element.value += text;
+            }
+
             element.dispatchEvent(new Event('input', { bubbles: true }));
             element.dispatchEvent(new Event('change', { bubbles: true }));
+            element.dispatchEvent(new Event('keydown', { bubbles: true }));
+            element.dispatchEvent(new Event('keyup', { bubbles: true }));
         } else if (element.isContentEditable) {
             document.execCommand('insertText', false, text);
         }
