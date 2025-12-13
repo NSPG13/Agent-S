@@ -19,11 +19,6 @@ except ImportError:
 
 logger = logging.getLogger("desktopenv.agent")
 
-# Enable websockets debug logging
-ws_logger = logging.getLogger("websockets")
-ws_logger.setLevel(logging.DEBUG)
-ws_logger.addHandler(logging.StreamHandler())
-
 
 class BrowserBridge:
     """
