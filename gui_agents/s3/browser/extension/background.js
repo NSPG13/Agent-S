@@ -8,7 +8,7 @@
 // WebSocket connection to Agent-S3
 let ws = null;
 let wsConnected = false;
-const WS_URL = 'ws://127.0.0.1:9333';
+const WS_URL = 'ws://localhost:9333';
 const RECONNECT_INTERVAL = 3000;
 
 // Connection state
